@@ -16,7 +16,7 @@ const Dialog = ({
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={() => onOpenChange(false)}
     >
-      <div className="fixed inset-0 bg-black/60" />
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
       <div onClick={(e) => e.stopPropagation()}>{children}</div>
     </div>
   );
@@ -29,7 +29,7 @@ const DialogContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative z-50 w-full max-w-md rounded-lg border bg-card p-6 shadow-lg animate-in fade-in-0 zoom-in-95",
+      "relative z-50 w-full max-w-md rounded-xl border border-border/60 bg-popover p-6 shadow-2xl shadow-black/40",
       className
     )}
     {...props}

@@ -98,8 +98,14 @@ function App() {
     cursorBlink: true,
     cursorStyle: "block",
     themeName: "Dark (Default)",
+    appTheme: "dark-blue",
   });
   const [showSettings, setShowSettings] = useState(false);
+
+  // Apply app theme to root element
+  useEffect(() => {
+    document.documentElement.setAttribute("data-app-theme", terminalSettings.appTheme);
+  }, [terminalSettings.appTheme]);
 
   // Load configs from Tauri on mount
   useEffect(() => {
@@ -265,49 +271,45 @@ function App() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Title Bar - macOS traffic lights overlay on the left */}
+      {/* Title Bar */}
       <div
         data-tauri-drag-region
-        className="titlebar flex items-center h-11 bg-card border-b border-border shrink-0 select-none"
+        className="titlebar flex items-center h-11 bg-card/80 backdrop-blur-sm border-b border-border/60 shrink-0 select-none"
       >
         {/* Left spacer for macOS traffic lights */}
         <div className="w-[78px] shrink-0" data-tauri-drag-region />
 
         {/* Title / drag area */}
-        <div className="flex-1 text-xs text-muted-foreground font-medium" data-tauri-drag-region>
+        <div className="flex-1 text-xs text-muted-foreground/70 font-medium tracking-wide" data-tauri-drag-region>
           Xterm App
         </div>
 
         {/* Layout toggle buttons */}
-        <div className="flex items-center gap-0.5 px-2 shrink-0 titlebar-buttons">
-          <Button
-            variant="ghost"
-            size="icon"
+        <div className="flex items-center gap-1 px-2 shrink-0 titlebar-buttons">
+          <button
             className={cn(
-              "h-7 w-7",
+              "flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
               showSidebar
-                ? "text-foreground bg-accent"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-foreground/90 bg-accent/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
             )}
             onClick={() => setShowSidebar((v) => !v)}
             title={showSidebar ? "Hide sidebar" : "Show sidebar"}
           >
             <SidebarIcon active={showSidebar} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
+          </button>
+          <button
             className={cn(
-              "h-7 w-7",
+              "flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
               showBottomPanel
-                ? "text-foreground bg-accent"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-foreground/90 bg-accent/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
             )}
             onClick={() => setShowBottomPanel((v) => !v)}
             title={showBottomPanel ? "Hide bottom panel" : "Show bottom panel"}
           >
             <PanelIcon active={showBottomPanel} />
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -326,23 +328,25 @@ function App() {
 
         {/* Content: Tab Bar + Terminal + Bottom Panel */}
         <div className="flex flex-col flex-1 min-w-0">
-          {/* Tab Bar - only inside terminal area */}
-          <div className="flex items-center bg-card border-b border-border h-9 shrink-0 overflow-x-auto">
+          {/* Tab Bar */}
+          <div className="flex items-center bg-card/50 border-b border-border/50 h-9 shrink-0 overflow-x-auto scrollbar-thin">
             {tabs.map((tab) => (
               <div
                 key={tab.id}
                 className={cn(
-                  "group flex items-center gap-2 px-3 h-full cursor-pointer border-r border-border text-xs select-none transition-colors",
+                  "group flex items-center gap-2 px-3 h-full cursor-pointer border-r border-border/30 text-xs select-none transition-all duration-150",
                   activeTab === tab.id
                     ? "bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/30 hover:text-foreground/80"
                 )}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {getTabIcon(tab.config.type)}
+                <span className={cn("transition-colors", activeTab === tab.id ? "text-primary" : "")}>
+                  {getTabIcon(tab.config.type)}
+                </span>
                 <span className="max-w-[140px] truncate">{tab.label}</span>
                 <button
-                  className="opacity-0 group-hover:opacity-100 hover:bg-muted rounded p-0.5 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 hover:bg-muted/80 rounded p-0.5 transition-all duration-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     closeTab(tab.id);
@@ -352,22 +356,28 @@ function App() {
                 </button>
               </div>
             ))}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-full w-9 rounded-none text-muted-foreground"
+            <button
+              className="flex items-center justify-center h-full w-9 text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
               onClick={() => setShowDialog(true)}
+              title="New Connection"
             >
               <Plus className="size-4" />
-            </Button>
+            </button>
           </div>
 
           {/* Terminal Area */}
           <div className="flex-1 relative min-h-0">
             {tabs.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/40 text-muted-foreground/60">
+                  <TerminalSquare className="size-8" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-medium text-foreground/70">No active sessions</p>
+                  <p className="text-xs text-muted-foreground/70">Create a new connection to get started</p>
+                </div>
                 <button
-                  className="flex items-center gap-2 hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-sm font-medium"
                   onClick={() => setShowDialog(true)}
                 >
                   <Plus className="size-4" />
@@ -426,30 +436,33 @@ function App() {
       />
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between h-6 px-3 bg-card border-t border-border shrink-0 text-xs text-muted-foreground select-none">
+      <div className="flex items-center justify-between h-6 px-3 bg-primary/10 border-t border-primary/20 shrink-0 text-[11px] text-muted-foreground select-none">
         <div className="flex items-center gap-3">
           {activeTabInfo && (
             <>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5 text-foreground/80">
                 {getTabIcon(activeTabInfo.config.type)}
                 {activeTabInfo.label}
               </span>
               {activeTabInfo.config.type === "ssh" && (
-                <span>{activeTabInfo.config.host}:{activeTabInfo.config.port}</span>
+                <span className="text-muted-foreground/70">{activeTabInfo.config.host}:{activeTabInfo.config.port}</span>
               )}
               {activeTabInfo.config.type === "serial" && (
-                <span>{activeTabInfo.config.portName} @ {activeTabInfo.config.baudRate}</span>
+                <span className="text-muted-foreground/70">{activeTabInfo.config.portName} @ {activeTabInfo.config.baudRate}</span>
               )}
             </>
           )}
         </div>
         <div className="flex items-center gap-3">
           {hexEnabled && (
-            <span className="text-green-400">HEX REC</span>
+            <span className="flex items-center gap-1 text-green-400/90">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              REC
+            </span>
           )}
           {tabs.length > 0 && terminalSize && (
-            <span className="font-mono">
-              {terminalSize.cols}x{terminalSize.rows}
+            <span className="font-mono text-muted-foreground/70">
+              {terminalSize.cols}×{terminalSize.rows}
             </span>
           )}
         </div>

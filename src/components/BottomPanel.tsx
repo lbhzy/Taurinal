@@ -60,26 +60,26 @@ export function BottomPanel({
 
   return (
     <div
-      className="flex flex-col shrink-0 border-t border-border bg-card"
+      className="flex flex-col shrink-0 border-t border-border/50 bg-card/40"
       style={{ height }}
     >
       {/* Resize handle */}
       <div
-        className="h-1 cursor-ns-resize hover:bg-blue-500/50 active:bg-blue-500/50 transition-colors"
+        className="h-[3px] cursor-ns-resize hover:bg-blue-500/50 active:bg-blue-500/60 transition-colors"
         onMouseDown={handleMouseDown}
       />
 
       {/* Tab bar */}
-      <div className="flex items-center border-b border-border shrink-0 h-8 select-none">
+      <div className="flex items-center border-b border-border/40 shrink-0 h-8 select-none">
         <div className="flex items-center flex-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               className={cn(
-                "flex items-center gap-1.5 px-3 h-full text-xs transition-colors border-b-2",
+                "flex items-center gap-1.5 px-3 h-full text-[11px] transition-all duration-150 border-b-2",
                 activeTab === tab.id
-                  ? "text-foreground border-primary"
-                  : "text-muted-foreground border-transparent hover:text-foreground"
+                  ? "text-foreground/90 border-primary"
+                  : "text-muted-foreground/60 border-transparent hover:text-foreground/70"
               )}
               onClick={() => setActiveTab(tab.id)}
             >

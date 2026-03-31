@@ -95,32 +95,32 @@ export function Sidebar({
 
   return (
     <div className="flex h-full shrink-0">
-      {/* Activity Bar - icon strip */}
-      <div className="flex flex-col items-center w-12 bg-card border-r border-border py-2 shrink-0 justify-between">
+      {/* Activity Bar */}
+      <div className="flex flex-col items-center w-12 bg-card/60 border-r border-border/50 py-2 shrink-0 justify-between">
         <div className="flex flex-col items-center gap-1">
           <button
             className={cn(
-              "flex items-center justify-center w-10 h-10 rounded-md transition-colors relative",
+              "flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 relative",
               activePanel === "sessions"
                 ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground/60 hover:text-foreground/80"
             )}
             onClick={() => togglePanel("sessions")}
             title="Saved Sessions"
           >
-            <Bookmark className="size-5" />
+            <Bookmark className="size-[18px]" />
             {activePanel === "sessions" && (
-              <div className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-foreground rounded-r" />
+              <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-primary rounded-r" />
             )}
           </button>
         </div>
         <div className="flex flex-col items-center gap-1">
           <button
-            className="flex items-center justify-center w-10 h-10 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+            className="flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 text-muted-foreground/60 hover:text-foreground/80"
             onClick={onSettings}
             title="Settings"
           >
-            <Settings className="size-5" />
+            <Settings className="size-[18px]" />
           </button>
         </div>
       </div>
@@ -128,51 +128,51 @@ export function Sidebar({
       {/* Panel content */}
       {activePanel && (
         <div
-          className="bg-card border-r border-border flex flex-col shrink-0 relative"
+          className="bg-card/40 border-r border-border/50 flex flex-col shrink-0 relative"
           style={{ width: panelWidth }}
         >          {activePanel === "sessions" && (
             <>
               {/* Panel header */}
-              <div className="flex items-center justify-between px-3 h-9 border-b border-border shrink-0">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="flex items-center justify-between px-3 h-9 border-b border-border/50 shrink-0">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                   Sessions
                 </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground"
+                <button
+                  className="flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground/50 hover:text-foreground/80 hover:bg-accent/40 transition-colors"
                   onClick={onManageSessions}
                   title="Manage sessions"
                 >
                   <Settings className="size-3.5" />
-                </Button>
+                </button>
               </div>
 
               {/* Session list */}
               <div className="flex-1 overflow-y-auto scrollbar-thin">
                 {sessions.length === 0 ? (
-                  <div className="p-3 text-xs text-muted-foreground text-center">
+                  <div className="p-4 text-xs text-muted-foreground/60 text-center leading-relaxed">
                     No saved sessions.
                     <br />
                     Click the gear icon to add one.
                   </div>
                 ) : (
-                  <div className="py-1">
+                  <div className="py-0.5">
                     {sessions.map((session) => (
                       <button
                         key={session.id}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/50 transition-colors group"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-accent/40 transition-all duration-100 group"
                         onClick={() => onOpenSession(session.config)}
                         title={`Connect: ${session.name}`}
                       >
-                        {getSessionIcon(session.config.type)}
+                        <span className="text-muted-foreground/60 group-hover:text-primary/80 transition-colors">
+                          {getSessionIcon(session.config.type)}
+                        </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm truncate">{session.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">
+                          <div className="text-[13px] truncate text-foreground/85 group-hover:text-foreground transition-colors">{session.name}</div>
+                          <div className="text-[11px] text-muted-foreground/50 truncate">
                             {getSessionDescription(session.config)}
                           </div>
                         </div>
-                        <Play className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
+                        <Play className="size-3 text-primary/0 group-hover:text-primary/60 shrink-0 transition-all duration-150" />
                       </button>
                     ))}
                   </div>

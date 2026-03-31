@@ -15,7 +15,9 @@ import { Select } from "@/components/ui/select";
 import { FolderOpen } from "lucide-react";
 import {
   type TerminalSettings,
+  type TerminalTheme,
   BUILTIN_THEMES,
+  APP_THEMES,
   getTheme,
 } from "@/lib/terminal-settings";
 
@@ -37,6 +39,18 @@ const FONT_OPTIONS = [
   'Consolas, monospace',
 ];
 
+function isLightTheme(theme: TerminalTheme): boolean {
+  // Parse hex to luminance — light backgrounds have high luminance
+  const hex = theme.background.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 128;
+}
+
+const darkThemes = Object.keys(BUILTIN_THEMES).filter((n) => !isLightTheme(BUILTIN_THEMES[n]));
+const lightThemes = Object.keys(BUILTIN_THEMES).filter((n) => isLightTheme(BUILTIN_THEMES[n]));
+
 export function SettingsDialog({
   open,
   settings: initial,
@@ -46,7 +60,6 @@ export function SettingsDialog({
   const [settings, setSettings] = useState<TerminalSettings>(initial);
 
   const theme = getTheme(settings);
-  const themeNames = Object.keys(BUILTIN_THEMES);
 
   const update = (patch: Partial<TerminalSettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -63,18 +76,43 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Theme */}
+          {/* App Theme */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Color Theme</Label>
+            <Label className="text-sm font-medium">App Theme</Label>
+            <Select
+              value={settings.appTheme}
+              onChange={(e) => update({ appTheme: e.target.value })}
+            >
+              <optgroup label="Dark">
+                {APP_THEMES.filter((t) => t.dark).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Light">
+                {APP_THEMES.filter((t) => !t.dark).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </optgroup>
+            </Select>
+          </div>
+
+          {/* Terminal Theme */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Terminal Color Theme</Label>
             <Select
               value={settings.themeName}
               onChange={(e) => update({ themeName: e.target.value })}
             >
-              {themeNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              <optgroup label="Dark">
+                {darkThemes.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Light">
+                {lightThemes.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </optgroup>
             </Select>
             {/* Theme preview */}
             <div
