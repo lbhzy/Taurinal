@@ -11,6 +11,7 @@ import { SettingsDialog } from "./components/SettingsDialog";
 import { loadQuickCommands, saveQuickCommands, type QuickCommand } from "@/lib/quick-commands";
 import { loadSavedSessions, saveSessions, type SavedSession } from "@/lib/saved-sessions";
 import { loadTerminalSettings, saveTerminalSettings, type TerminalSettings } from "@/lib/terminal-settings";
+import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import {
   Plus, X, TerminalSquare, Globe, Usb, Zap, Binary,
@@ -84,6 +85,8 @@ function App() {
   // Layout visibility
   const [showSidebar, setShowSidebar] = useState(true);
   const [showBottomPanel, setShowBottomPanel] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(224);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(200);
 
   // Terminal size tracking
   const [terminalSize, setTerminalSize] = useState<{ rows: number; cols: number } | null>(null);
@@ -103,7 +106,26 @@ function App() {
     loadQuickCommands().then(setQuickCommands);
     loadSavedSessions().then(setSavedSessions);
     loadTerminalSettings().then(setTerminalSettings);
+    invoke<Record<string, unknown> | null>("config_read", { key: "layout" }).then((data) => {
+      if (!data) return;
+      if (typeof data.showSidebar === "boolean") setShowSidebar(data.showSidebar);
+      if (typeof data.showBottomPanel === "boolean") setShowBottomPanel(data.showBottomPanel);
+      if (typeof data.sidebarWidth === "number") setSidebarWidth(data.sidebarWidth);
+      if (typeof data.bottomPanelHeight === "number") setBottomPanelHeight(data.bottomPanelHeight);
+    }).catch(() => {});
   }, []);
+
+  // Save layout on change
+  const layoutRef = useRef({ showSidebar, showBottomPanel, sidebarWidth, bottomPanelHeight });
+  layoutRef.current = { showSidebar, showBottomPanel, sidebarWidth, bottomPanelHeight };
+  const saveLayoutTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveLayout = useCallback(() => {
+    clearTimeout(saveLayoutTimer.current);
+    saveLayoutTimer.current = setTimeout(() => {
+      invoke("config_write", { key: "layout", value: layoutRef.current });
+    }, 300);
+  }, []);
+  useEffect(saveLayout, [showSidebar, showBottomPanel, sidebarWidth, bottomPanelHeight, saveLayout]);
 
   const MAX_HEX_SIZE = 64 * 1024; // Keep last 64KB per tab
 
@@ -298,6 +320,8 @@ function App() {
           onManageSessions={() => setShowSessionManager(true)}
           onSettings={() => setShowSettings(true)}
           visible={showSidebar}
+          panelWidth={sidebarWidth}
+          onPanelWidthChange={setSidebarWidth}
         />
 
         {/* Content: Tab Bar + Terminal + Bottom Panel */}
@@ -366,7 +390,7 @@ function App() {
           </div>
 
           {/* Bottom Panel */}
-          {showBottomPanel && <BottomPanel tabs={bottomTabs} />}
+          {showBottomPanel && <BottomPanel tabs={bottomTabs} height={bottomPanelHeight} onHeightChange={setBottomPanelHeight} />}
         </div>
       </div>
 

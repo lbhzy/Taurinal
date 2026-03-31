@@ -22,6 +22,8 @@ interface SidebarProps {
   onManageSessions: () => void;
   onSettings: () => void;
   visible: boolean;
+  panelWidth: number;
+  onPanelWidthChange: (width: number) => void;
 }
 
 function getSessionIcon(type: ConnectionConfig["type"]) {
@@ -52,9 +54,10 @@ export function Sidebar({
   onManageSessions,
   onSettings,
   visible,
+  panelWidth,
+  onPanelWidthChange,
 }: SidebarProps) {
   const [activePanel, setActivePanel] = useState<SidebarPanel>("sessions");
-  const [panelWidth, setPanelWidth] = useState(224); // 14rem = 224px
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
@@ -71,7 +74,7 @@ export function Sidebar({
       if (!isDragging.current) return;
       const delta = e.clientX - startX.current;
       const newWidth = Math.min(400, Math.max(150, startWidth.current + delta));
-      setPanelWidth(newWidth);
+      onPanelWidthChange(newWidth);
     };
     const onMouseUp = () => {
       isDragging.current = false;
@@ -82,7 +85,7 @@ export function Sidebar({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, []);
+  }, [onPanelWidthChange]);
 
   const togglePanel = (panel: SidebarPanel) => {
     setActivePanel((prev) => (prev === panel ? null : panel));

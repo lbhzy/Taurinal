@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, type ReactNode } from "react";
+import { useRef, useCallback, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export interface PanelTab {
   id: string;
@@ -10,19 +11,20 @@ export interface PanelTab {
 
 interface BottomPanelProps {
   tabs: PanelTab[];
-  defaultHeight?: number;
+  height: number;
+  onHeightChange: (height: number) => void;
   minHeight?: number;
   maxHeight?: number;
 }
 
 export function BottomPanel({
   tabs,
-  defaultHeight = 200,
+  height,
+  onHeightChange,
   minHeight = 100,
   maxHeight = 500,
 }: BottomPanelProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
-  const [height, setHeight] = useState(defaultHeight);
   const draggingRef = useRef(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
@@ -41,7 +43,7 @@ export function BottomPanel({
           maxHeight,
           Math.max(minHeight, startHeightRef.current + delta)
         );
-        setHeight(newHeight);
+        onHeightChange(newHeight);
       };
 
       const handleMouseUp = () => {
@@ -53,7 +55,7 @@ export function BottomPanel({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [height, minHeight, maxHeight]
+    [height, minHeight, maxHeight, onHeightChange]
   );
 
   return (
