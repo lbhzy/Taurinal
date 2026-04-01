@@ -14,10 +14,9 @@ const Dialog = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      onClick={() => onOpenChange(false)}
     >
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div>{children}</div>
     </div>
   );
 };

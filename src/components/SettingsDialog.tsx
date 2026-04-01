@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Dialog,
@@ -28,16 +28,59 @@ interface SettingsDialogProps {
   onCancel: () => void;
 }
 
-const FONT_OPTIONS = [
-  'Menlo, Monaco, "Courier New", monospace',
-  '"Fira Code", monospace',
-  '"JetBrains Mono", monospace',
-  '"Source Code Pro", monospace',
-  '"Cascadia Code", monospace',
-  '"IBM Plex Mono", monospace',
-  '"SF Mono", monospace',
-  'Consolas, monospace',
+const ALL_MONO_FONTS = [
+  "Menlo",
+  "Monaco",
+  "Courier New",
+  "Fira Code",
+  "JetBrains Mono",
+  "Source Code Pro",
+  "Cascadia Code",
+  "Cascadia Mono",
+  "IBM Plex Mono",
+  "SF Mono",
+  "Consolas",
+  "Inconsolata",
+  "Hack",
+  "Ubuntu Mono",
+  "Roboto Mono",
+  "Anonymous Pro",
+  "DejaVu Sans Mono",
+  "Droid Sans Mono",
+  "Liberation Mono",
+  "Noto Sans Mono",
 ];
+
+function detectAvailableFonts(candidates: string[]): string[] {
+  const testStr = "mmmmmmmmmmlli1|W@#";
+  const size = "72px";
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return candidates;
+
+  // Measure with two different fallback baselines
+  ctx.font = `${size} monospace`;
+  const monoWidth = ctx.measureText(testStr).width;
+  ctx.font = `${size} sans-serif`;
+  const sansWidth = ctx.measureText(testStr).width;
+  ctx.font = `${size} serif`;
+  const serifWidth = ctx.measureText(testStr).width;
+
+  return candidates.filter((font) => {
+    // Test against all three baselines — if width differs from ANY, font exists
+    ctx.font = `${size} "${font}", monospace`;
+    const w1 = ctx.measureText(testStr).width;
+    ctx.font = `${size} "${font}", sans-serif`;
+    const w2 = ctx.measureText(testStr).width;
+    ctx.font = `${size} "${font}", serif`;
+    const w3 = ctx.measureText(testStr).width;
+    return w1 !== monoWidth || w2 !== sansWidth || w3 !== serifWidth;
+  });
+}
+
+function toFontFamily(name: string): string {
+  return `"${name}", monospace`;
+}
 
 function isLightTheme(theme: TerminalTheme): boolean {
   // Parse hex to luminance — light backgrounds have high luminance
@@ -58,6 +101,14 @@ export function SettingsDialog({
   onCancel,
 }: SettingsDialogProps) {
   const [settings, setSettings] = useState<TerminalSettings>(initial);
+  const [availableFonts, setAvailableFonts] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      setSettings(initial);
+      setAvailableFonts(detectAvailableFonts(ALL_MONO_FONTS));
+    }
+  }, [open]);
 
   const theme = getTheme(settings);
 
@@ -145,9 +196,9 @@ export function SettingsDialog({
                 value={settings.fontFamily}
                 onChange={(e) => update({ fontFamily: e.target.value })}
               >
-                {FONT_OPTIONS.map((font) => (
-                  <option key={font} value={font}>
-                    {font.split(",")[0].replace(/"/g, "")}
+                {availableFonts.map((font) => (
+                  <option key={font} value={toFontFamily(font)}>
+                    {font}
                   </option>
                 ))}
               </Select>

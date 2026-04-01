@@ -8,18 +8,12 @@ export interface QuickCommand {
 
 const CONFIG_KEY = "quick-commands";
 
-const DEFAULT_COMMANDS: QuickCommand[] = [
-  { id: "1", label: "ls", command: "ls -la\n" },
-  { id: "2", label: "clear", command: "clear\n" },
-  { id: "3", label: "top", command: "top\n" },
-];
-
 export async function loadQuickCommands(): Promise<QuickCommand[]> {
   try {
     const data = await invoke<QuickCommand[] | null>("config_read", { key: CONFIG_KEY });
     if (data) return data;
   } catch {}
-  return DEFAULT_COMMANDS;
+  return [];
 }
 
 export async function saveQuickCommands(commands: QuickCommand[]) {

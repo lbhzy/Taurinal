@@ -45,7 +45,6 @@ const LINE_HEIGHT = 20;
 
 export function HexView({ data, enabled, onToggle, onClear }: HexViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef(true);
   const rafRef = useRef(0);
   const [scrollState, setScrollState] = useState({ top: 0, height: 400 });
 
@@ -53,18 +52,37 @@ export function HexView({ data, enabled, onToggle, onClear }: HexViewProps) {
   const totalHeight = lines.length * LINE_HEIGHT;
   const byteCount = useMemo(() => new TextEncoder().encode(data).length, [data]);
 
+  // Measure container height on mount & resize
   useEffect(() => {
-    if (autoScrollRef.current && containerRef.current) {
-      containerRef.current.scrollTop = totalHeight;
-    }
-  }, [totalHeight]);
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      setScrollState((prev) => ({ ...prev, height: el.clientHeight }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Always scroll to bottom when new data arrives
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      });
+    });
+  }, [data]);
 
   const handleScroll = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
       if (!containerRef.current) return;
-      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-      autoScrollRef.current = scrollHeight - scrollTop - clientHeight < 40;
+      const { scrollTop, clientHeight } = containerRef.current;
       setScrollState({ top: scrollTop, height: clientHeight });
     });
   }, []);

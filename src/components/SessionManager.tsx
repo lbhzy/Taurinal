@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { Plus, Trash2, TerminalSquare, Globe, Usb } from "lucide-react";
+import { Plus, Trash2, TerminalSquare, Globe, Usb, Pencil, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { SavedSession } from "@/lib/saved-sessions";
 import type { ConnectionConfig } from "./Terminal";
+
+interface SerialPortInfo {
+  port_name: string;
+  port_type: string;
+}
 
 interface SessionManagerProps {
   open: boolean;
@@ -31,6 +38,7 @@ export function SessionManager({
   const [sessions, setSessions] = useState<SavedSession[]>(initialSessions);
   const [name, setName] = useState("");
   const [connType, setConnType] = useState<"pty" | "ssh" | "serial">("pty");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // PTY fields
   const [ptyCommand, setPtyCommand] = useState("");
@@ -44,8 +52,65 @@ export function SessionManager({
   const [keyPath, setKeyPath] = useState("~/.ssh/id_rsa");
 
   // Serial fields
-  const [portName, setPortName] = useState("/dev/ttyUSB0");
+  const [serialPorts, setSerialPorts] = useState<SerialPortInfo[]>([]);
+  const [portName, setPortName] = useState("");
   const [baudRate, setBaudRate] = useState(115200);
+
+  useEffect(() => {
+    if (open) {
+      setSessions(initialSessions);
+      resetForm();
+    }
+  }, [open]);
+
+  // Fetch serial ports when serial type is selected
+  useEffect(() => {
+    if (connType === "serial" && open) {
+      invoke<SerialPortInfo[]>("serial_list_ports").then((ports) => {
+        setSerialPorts(ports);
+        if (ports.length > 0 && !portName) {
+          setPortName(ports[0].port_name);
+        }
+      }).catch(() => {});
+    }
+  }, [connType, open]);
+
+  const resetForm = () => {
+    setName("");
+    setConnType("pty");
+    setPtyCommand("");
+    setHost("127.0.0.1");
+    setPort(22);
+    setUsername("root");
+    setAuthMethod("password");
+    setPassword("");
+    setKeyPath("~/.ssh/id_rsa");
+    setPortName("");
+    setBaudRate(115200);
+    setEditingId(null);
+  };
+
+  const loadConfigToForm = (session: SavedSession) => {
+    setName(session.name);
+    setConnType(session.config.type);
+    switch (session.config.type) {
+      case "pty":
+        setPtyCommand(session.config.command || "");
+        break;
+      case "ssh":
+        setHost(session.config.host);
+        setPort(session.config.port);
+        setUsername(session.config.username);
+        setAuthMethod(session.config.authMethod);
+        setPassword(session.config.password || "");
+        setKeyPath(session.config.keyPath || "~/.ssh/id_rsa");
+        break;
+      case "serial":
+        setPortName(session.config.portName);
+        setBaudRate(session.config.baudRate);
+        break;
+    }
+  };
 
   const buildConfig = (): ConnectionConfig => {
     switch (connType) {
@@ -68,17 +133,41 @@ export function SessionManager({
 
   const addSession = () => {
     if (!name.trim()) return;
-    const session: SavedSession = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      config: buildConfig(),
-    };
-    setSessions((prev) => [...prev, session]);
-    setName("");
+    if (editingId) {
+      // Update existing session
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === editingId ? { ...s, name: name.trim(), config: buildConfig() } : s
+        )
+      );
+      setEditingId(null);
+    } else {
+      // Add new session
+      const session: SavedSession = {
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        config: buildConfig(),
+      };
+      setSessions((prev) => [...prev, session]);
+    }
+    resetForm();
+  };
+
+  const startEditing = (session: SavedSession) => {
+    setEditingId(session.id);
+    loadConfigToForm(session);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    resetForm();
   };
 
   const removeSession = (id: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== id));
+    if (editingId === id) {
+      cancelEditing();
+    }
   };
 
   const getIcon = (type: ConnectionConfig["type"]) => {
@@ -109,7 +198,7 @@ export function SessionManager({
         <DialogHeader>
           <DialogTitle>Manage Saved Sessions</DialogTitle>
           <DialogDescription>
-            Add or remove saved connection sessions for quick access.
+            Add, edit, or remove saved connection sessions for quick access.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,7 +212,12 @@ export function SessionManager({
           {sessions.map((s) => (
             <div
               key={s.id}
-              className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 group"
+              className={cn(
+                "flex items-center gap-2 rounded-md border px-3 py-2 group",
+                editingId === s.id
+                  ? "border-primary/50 bg-primary/5"
+                  : "border-border bg-muted/30"
+              )}
             >
               {getIcon(s.config.type)}
               <div className="flex-1 min-w-0">
@@ -132,6 +226,14 @@ export function SessionManager({
                   {getDesc(s.config)}
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+                onClick={() => startEditing(s)}
+              >
+                <Pencil className="size-3.5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -144,9 +246,19 @@ export function SessionManager({
           ))}
         </div>
 
-        {/* Add new session */}
+        {/* Add/edit session */}
         <div className="border-t border-border pt-4 space-y-3">
-          <div className="text-sm font-medium">Add New Session</div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium">
+              {editingId ? "Edit Session" : "Add New Session"}
+            </div>
+            {editingId && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={cancelEditing}>
+                <X className="size-3 mr-1" />
+                Cancel Edit
+              </Button>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
@@ -260,13 +372,21 @@ export function SessionManager({
           {connType === "serial" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Port Name</Label>
-                <Input
+                <Label className="text-xs">Port</Label>
+                <Select
                   value={portName}
                   onChange={(e) => setPortName(e.target.value)}
                   className="h-8 text-xs"
-                  placeholder="/dev/ttyUSB0"
-                />
+                >
+                  {serialPorts.length === 0 && (
+                    <option value="">No ports found</option>
+                  )}
+                  {serialPorts.map((p) => (
+                    <option key={p.port_name} value={p.port_name}>
+                      {p.port_name} ({p.port_type})
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Baud Rate</Label>
@@ -294,8 +414,11 @@ export function SessionManager({
             onClick={addSession}
             disabled={!name.trim()}
           >
-            <Plus className="size-3.5 mr-1" />
-            Add Session
+            {editingId ? (
+              <><Check className="size-3.5 mr-1" />Update Session</>
+            ) : (
+              <><Plus className="size-3.5 mr-1" />Add Session</>
+            )}
           </Button>
         </div>
 

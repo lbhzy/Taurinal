@@ -46,21 +46,35 @@ function getTabIcon(type: ConnectionConfig["type"]) {
   }
 }
 
-// VS Code-style layout icons
-function SidebarIcon({ active }: { active: boolean }) {
+// VS Code-style layout icons (codicons)
+function SidebarLeftIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1.5" y="2.5" width="13" height="11" rx="0.5" stroke="currentColor" strokeWidth="1" />
-      <rect x="1.5" y="2.5" width="4" height="11" rx="0" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1" />
+      <path d="M2 2h12v12H2V2zm1 1v10h3V3H3zm4 0v10h6V3H7z" fill="currentColor" />
     </svg>
   );
 }
 
-function PanelIcon({ active }: { active: boolean }) {
+function SidebarLeftOffIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1.5" y="2.5" width="13" height="11" rx="0.5" stroke="currentColor" strokeWidth="1" />
-      <rect x="1.5" y="9.5" width="13" height="4" rx="0" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1" />
+      <path d="M2 2h12v12H2V2zm1 1v10h3V3H3zm4 0v10h6V3H7z" fill="currentColor" fillOpacity="0.4" />
+    </svg>
+  );
+}
+
+function PanelBottomIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 2h12v12H2V2zm1 1v6h10V3H3zm0 7v3h10v-3H3z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PanelBottomOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 2h12v12H2V2zm1 1v6h10V3H3zm0 7v3h10v-3H3z" fill="currentColor" fillOpacity="0.4" />
     </svg>
   );
 }
@@ -285,30 +299,30 @@ function App() {
         </div>
 
         {/* Layout toggle buttons */}
-        <div className="flex items-center gap-1 px-2 shrink-0 titlebar-buttons">
+        <div className="flex items-center gap-0.5 px-2 shrink-0 titlebar-buttons">
           <button
             className={cn(
-              "flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              "flex items-center justify-center h-7 w-7 rounded transition-colors duration-100",
               showSidebar
-                ? "text-foreground/90 bg-accent/60"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                ? "text-foreground/90"
+                : "text-muted-foreground/50 hover:text-foreground/70"
             )}
             onClick={() => setShowSidebar((v) => !v)}
             title={showSidebar ? "Hide sidebar" : "Show sidebar"}
           >
-            <SidebarIcon active={showSidebar} />
+            {showSidebar ? <SidebarLeftIcon /> : <SidebarLeftOffIcon />}
           </button>
           <button
             className={cn(
-              "flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              "flex items-center justify-center h-7 w-7 rounded transition-colors duration-100",
               showBottomPanel
-                ? "text-foreground/90 bg-accent/60"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                ? "text-foreground/90"
+                : "text-muted-foreground/50 hover:text-foreground/70"
             )}
             onClick={() => setShowBottomPanel((v) => !v)}
             title={showBottomPanel ? "Hide bottom panel" : "Show bottom panel"}
           >
-            <PanelIcon active={showBottomPanel} />
+            {showBottomPanel ? <PanelBottomIcon /> : <PanelBottomOffIcon />}
           </button>
         </div>
       </div>
@@ -322,67 +336,93 @@ function App() {
           onManageSessions={() => setShowSessionManager(true)}
           onSettings={() => setShowSettings(true)}
           visible={showSidebar}
+          onVisibleChange={setShowSidebar}
           panelWidth={sidebarWidth}
           onPanelWidthChange={setSidebarWidth}
         />
 
         {/* Content: Tab Bar + Terminal + Bottom Panel */}
         <div className="flex flex-col flex-1 min-w-0">
-          {/* Tab Bar */}
-          <div className="flex items-center bg-card/50 border-b border-border/50 h-9 shrink-0 overflow-x-auto scrollbar-thin">
-            {tabs.map((tab) => (
-              <div
-                key={tab.id}
-                className={cn(
-                  "group flex items-center gap-2 px-3 h-full cursor-pointer border-r border-border/30 text-xs select-none transition-all duration-150",
-                  activeTab === tab.id
-                    ? "bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-accent/30 hover:text-foreground/80"
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span className={cn("transition-colors", activeTab === tab.id ? "text-primary" : "")}>
-                  {getTabIcon(tab.config.type)}
-                </span>
-                <span className="max-w-[140px] truncate">{tab.label}</span>
-                <button
-                  className="opacity-0 group-hover:opacity-100 hover:bg-muted/80 rounded p-0.5 transition-all duration-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeTab(tab.id);
-                  }}
+          {/* Tab Bar - only shown when tabs exist */}
+          {tabs.length > 0 && (
+            <div className="flex items-center bg-card/50 border-b border-border/50 h-9 shrink-0 overflow-x-auto scrollbar-thin">
+              {tabs.map((tab) => (
+                <div
+                  key={tab.id}
+                  className={cn(
+                    "group flex items-center gap-2 px-3 h-full cursor-pointer border-r border-border/30 text-xs select-none transition-all duration-150",
+                    activeTab === tab.id
+                      ? "bg-background text-foreground"
+                      : "text-muted-foreground hover:bg-accent/30 hover:text-foreground/80"
+                  )}
+                  onClick={() => setActiveTab(tab.id)}
                 >
-                  <X className="size-3" />
-                </button>
-              </div>
-            ))}
-            <button
-              className="flex items-center justify-center h-full w-9 text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
-              onClick={() => setShowDialog(true)}
-              title="New Connection"
-            >
-              <Plus className="size-4" />
-            </button>
-          </div>
+                  <span className={cn("transition-colors", activeTab === tab.id ? "text-primary" : "")}>
+                    {getTabIcon(tab.config.type)}
+                  </span>
+                  <span className="max-w-[140px] truncate">{tab.label}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 hover:bg-muted/80 rounded p-0.5 transition-all duration-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Terminal Area */}
           <div className="flex-1 relative min-h-0">
             {tabs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/40 text-muted-foreground/60">
-                  <TerminalSquare className="size-8" />
-                </div>
-                <div className="text-center space-y-1">
-                  <p className="text-sm font-medium text-foreground/70">No active sessions</p>
-                  <p className="text-xs text-muted-foreground/70">Create a new connection to get started</p>
-                </div>
-                <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-sm font-medium"
-                  onClick={() => setShowDialog(true)}
-                >
-                  <Plus className="size-4" />
-                  New Connection
-                </button>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-6 p-8">
+                {savedSessions.length > 0 ? (
+                  <>
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-medium text-foreground/70">Saved Sessions</p>
+                      <p className="text-xs text-muted-foreground/70">Click a session to connect, or create a new connection</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+                      {savedSessions.map((session) => (
+                        <button
+                          key={session.id}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-accent/40 hover:border-primary/30 transition-all duration-150 text-left group"
+                          onClick={() => addTab(session.config)}
+                          title={`Connect: ${session.name}`}
+                        >
+                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/40 text-muted-foreground/60 group-hover:text-primary/80 transition-colors shrink-0">
+                            {getTabIcon(session.config.type)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate text-foreground/85 group-hover:text-foreground transition-colors">
+                              {session.name}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground/50 truncate font-mono">
+                              {session.config.type === "pty"
+                                ? session.config.command || "Local Shell"
+                                : session.config.type === "ssh"
+                                ? `${session.config.username}@${session.config.host}:${session.config.port}`
+                                : `${session.config.portName} @ ${session.config.baudRate}`}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/40 text-muted-foreground/60">
+                      <TerminalSquare className="size-8" />
+                    </div>
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-medium text-foreground/70">No active sessions</p>
+                      <p className="text-xs text-muted-foreground/70">Use the sidebar to add sessions and connect</p>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               tabs.map((tab) => (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, Check, X } from "lucide-react";
 import type { QuickCommand } from "@/lib/quick-commands";
 
 interface QuickCommandManagerProps {
@@ -29,6 +29,18 @@ export function QuickCommandManager({
   const [commands, setCommands] = useState<QuickCommand[]>(initialCommands);
   const [editLabel, setEditLabel] = useState("");
   const [editCommand, setEditCommand] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+  const [editingCommand, setEditingCommand] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setCommands(initialCommands);
+      setEditLabel("");
+      setEditCommand("");
+      setEditingId(null);
+    }
+  }, [open]);
 
   const addCommand = () => {
     if (!editLabel.trim() || !editCommand.trim()) return;
@@ -45,10 +57,40 @@ export function QuickCommandManager({
     setCommands((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const startEditing = (cmd: QuickCommand) => {
+    setEditingId(cmd.id);
+    setEditingLabel(cmd.label);
+    setEditingCommand(cmd.command.replace(/\n$/, ""));
+  };
+
+  const confirmEditing = () => {
+    if (!editingId || !editingLabel.trim() || !editingCommand.trim()) return;
+    const cmd = editingCommand.endsWith("\n") ? editingCommand : editingCommand + "\n";
+    setCommands((prev) =>
+      prev.map((c) =>
+        c.id === editingId ? { ...c, label: editingLabel.trim(), command: cmd } : c
+      )
+    );
+    setEditingId(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addCommand();
+    }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      confirmEditing();
+    } else if (e.key === "Escape") {
+      cancelEditing();
     }
   };
 
@@ -58,7 +100,7 @@ export function QuickCommandManager({
         <DialogHeader>
           <DialogTitle>Manage Quick Commands</DialogTitle>
           <DialogDescription>
-            Add, remove, or reorder your quick command buttons.
+            Add, edit, or remove your quick command buttons.
           </DialogDescription>
         </DialogHeader>
 
@@ -74,21 +116,67 @@ export function QuickCommandManager({
               key={cmd.id}
               className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 group"
             >
-              <GripVertical className="size-3.5 text-muted-foreground shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{cmd.label}</div>
-                <div className="text-xs text-muted-foreground font-mono truncate">
-                  {cmd.command.replace(/\n$/, "")}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive-foreground"
-                onClick={() => removeCommand(cmd.id)}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              {editingId === cmd.id ? (
+                <>
+                  <div className="flex-1 min-w-0 grid grid-cols-5 gap-1">
+                    <Input
+                      value={editingLabel}
+                      onChange={(e) => setEditingLabel(e.target.value)}
+                      onKeyDown={handleEditKeyDown}
+                      className="h-7 text-xs col-span-2"
+                      autoFocus
+                    />
+                    <Input
+                      value={editingCommand}
+                      onChange={(e) => setEditingCommand(e.target.value)}
+                      onKeyDown={handleEditKeyDown}
+                      className="h-7 text-xs font-mono col-span-3"
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-green-500 hover:text-green-400"
+                    onClick={confirmEditing}
+                  >
+                    <Check className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={cancelEditing}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <GripVertical className="size-3.5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{cmd.label}</div>
+                    <div className="text-xs text-muted-foreground font-mono truncate">
+                      {cmd.command.replace(/\n$/, "")}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+                    onClick={() => startEditing(cmd)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive-foreground"
+                    onClick={() => removeCommand(cmd.id)}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </>
+              )}
             </div>
           ))}
         </div>

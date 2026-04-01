@@ -22,6 +22,7 @@ interface SidebarProps {
   onManageSessions: () => void;
   onSettings: () => void;
   visible: boolean;
+  onVisibleChange: (visible: boolean) => void;
   panelWidth: number;
   onPanelWidthChange: (width: number) => void;
 }
@@ -54,6 +55,7 @@ export function Sidebar({
   onManageSessions,
   onSettings,
   visible,
+  onVisibleChange,
   panelWidth,
   onPanelWidthChange,
 }: SidebarProps) {
@@ -87,15 +89,26 @@ export function Sidebar({
     };
   }, [onPanelWidthChange]);
 
-  const togglePanel = (panel: SidebarPanel) => {
-    setActivePanel((prev) => (prev === panel ? null : panel));
-  };
+  // Sync internal activePanel when external visible changes
+  useEffect(() => {
+    if (visible && activePanel === null) {
+      setActivePanel("sessions");
+    } else if (!visible && activePanel !== null) {
+      setActivePanel(null);
+    }
+  }, [visible]);
 
-  if (!visible) return null;
+  const togglePanel = (panel: SidebarPanel) => {
+    setActivePanel((prev) => {
+      const next = prev === panel ? null : panel;
+      onVisibleChange(next !== null);
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-full shrink-0">
-      {/* Activity Bar */}
+      {/* Activity Bar — always visible */}
       <div className="flex flex-col items-center w-12 bg-card/60 border-r border-border/50 py-2 shrink-0 justify-between">
         <div className="flex flex-col items-center gap-1">
           <button
@@ -126,7 +139,7 @@ export function Sidebar({
       </div>
 
       {/* Panel content */}
-      {activePanel && (
+      {visible && activePanel && (
         <div
           className="bg-card/40 border-r border-border/50 flex flex-col shrink-0 relative"
           style={{ width: panelWidth }}
