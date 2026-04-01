@@ -34,6 +34,59 @@ export interface SerialConfig {
 
 export type ConnectionConfig = PtyConfig | SshConfig | SerialConfig;
 
+const ANSI_RESET_FG_BG = "\x1b[39m\x1b[49m";
+
+function parseHexColor(input: string): [number, number, number] | null {
+  const hex = input.trim().replace(/^#/, "");
+  if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+    const r = parseInt(hex[0] + hex[0], 16);
+    const g = parseInt(hex[1] + hex[1], 16);
+    const b = parseInt(hex[2] + hex[2], 16);
+    return [r, g, b];
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return [r, g, b];
+  }
+  return null;
+}
+
+function highlightStartAnsi(hexColor: string): string | null {
+  const rgb = parseHexColor(hexColor);
+  if (!rgb) return null;
+  const [r, g, b] = rgb;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  const [fr, fg, fb] = luminance > 150 ? [0, 0, 0] : [255, 255, 255];
+  return `\x1b[48;2;${r};${g};${b}m\x1b[38;2;${fr};${fg};${fb}m`;
+}
+
+function applyTriggerHighlight(payload: string, triggers?: Trigger[]): string {
+  if (!triggers || triggers.length === 0 || payload.length === 0) return payload;
+
+  let result = payload;
+
+  for (const trigger of triggers) {
+    if (!trigger.enabled || !trigger.actions.highlight) continue;
+
+    const startAnsi = highlightStartAnsi(trigger.actions.highlight);
+    if (!startAnsi) continue;
+
+    try {
+      const emptyMatchCheck = new RegExp(trigger.pattern);
+      if (emptyMatchCheck.test("")) continue;
+
+      const re = new RegExp(trigger.pattern, "g");
+      result = result.replace(re, (matched) => `${startAnsi}${matched}${ANSI_RESET_FG_BG}`);
+    } catch {
+      // Ignore invalid regex pattern.
+    }
+  }
+
+  return result;
+}
+
 interface TerminalProps {
   config: ConnectionConfig;
   active: boolean;
@@ -142,7 +195,8 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       unlistenOutput = await listen<string>(
         `session-output-${sessionId}`,
         (event) => {
-          xterm.write(event.payload);
+          const highlightedPayload = applyTriggerHighlight(event.payload, triggersRef.current);
+          xterm.write(highlightedPayload);
           onOutputRef.current?.(event.payload);
           // Auto-command triggers
           const ts = triggersRef.current;
