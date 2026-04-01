@@ -5,6 +5,7 @@ import { QuickCommandBar } from "./components/QuickCommandBar";
 import { QuickCommandManager } from "./components/QuickCommandManager";
 import { BottomPanel, type PanelTab } from "./components/BottomPanel";
 import { HexView } from "./components/HexView";
+import { DataWaveform } from "./components/DataWaveform";
 import { Sidebar } from "./components/Sidebar";
 import { SessionManager } from "./components/SessionManager";
 import { SettingsDialog } from "./components/SettingsDialog";
@@ -16,7 +17,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { TriggerManager } from "@/components/TriggerManager";
 import {
-  Plus, X, TerminalSquare, Globe, Usb, Zap, Binary,
+  Plus, X, TerminalSquare, Globe, Usb, Zap, Binary, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -90,9 +91,13 @@ function App() {
   const [showCommandManager, setShowCommandManager] = useState(false);
   const terminalRefs = useRef<Map<number, TerminalHandle>>(new Map());
   const [hexDataMap, setHexDataMap] = useState<Map<number, string>>(new Map());
+  const [waveDataMap, setWaveDataMap] = useState<Map<number, string>>(new Map());
   const [hexEnabled, setHexEnabled] = useState(false);
+  const [waveEnabled, setWaveEnabled] = useState(true);
   const hexEnabledRef = useRef(hexEnabled);
   hexEnabledRef.current = hexEnabled;
+  const waveEnabledRef = useRef(waveEnabled);
+  waveEnabledRef.current = waveEnabled;
 
   // Saved sessions
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
@@ -158,6 +163,7 @@ function App() {
   useEffect(saveLayout, [showSidebar, showBottomPanel, sidebarWidth, bottomPanelHeight, saveLayout]);
 
   const MAX_HEX_SIZE = 64 * 1024; // Keep last 64KB per tab
+  const MAX_WAVE_SIZE = 256 * 1024; // Keep last 256KB per tab
 
   const addTab = useCallback(
     (config: ConnectionConfig) => {
@@ -182,6 +188,20 @@ function App() {
           }
         }
         return filtered;
+      });
+
+      setHexDataMap((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+
+      setWaveDataMap((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
       });
     },
     [activeTab]
@@ -240,7 +260,21 @@ function App() {
 
   const onTerminalOutput = useCallback(
     (tabId: number) => (data: string) => {
+      if (waveEnabledRef.current) {
+        setWaveDataMap((prev) => {
+          const next = new Map(prev);
+          const existing = next.get(tabId) ?? "";
+          let updated = existing + data;
+          if (updated.length > MAX_WAVE_SIZE) {
+            updated = updated.slice(updated.length - MAX_WAVE_SIZE);
+          }
+          next.set(tabId, updated);
+          return next;
+        });
+      }
+
       if (!hexEnabledRef.current) return;
+
       setHexDataMap((prev) => {
         const next = new Map(prev);
         const existing = next.get(tabId) ?? "";
@@ -252,7 +286,7 @@ function App() {
         return next;
       });
     },
-    [MAX_HEX_SIZE]
+    [MAX_HEX_SIZE, MAX_WAVE_SIZE]
   );
 
   const onTerminalResize = useCallback(
@@ -274,7 +308,16 @@ function App() {
     });
   }, [activeTab]);
 
+  const clearWaveData = useCallback(() => {
+    setWaveDataMap((prev) => {
+      const next = new Map(prev);
+      next.set(activeTab, "");
+      return next;
+    });
+  }, [activeTab]);
+
   const currentHexData = hexDataMap.get(activeTab) ?? "";
+  const currentWaveData = waveDataMap.get(activeTab) ?? "";
 
   const bottomTabs: PanelTab[] = useMemo(
     () => [
@@ -303,8 +346,21 @@ function App() {
           />
         ),
       },
+      {
+        id: "waveform",
+        label: "Data Waveform",
+        icon: <Activity className="size-3" />,
+        content: (
+          <DataWaveform
+            data={currentWaveData}
+            enabled={waveEnabled}
+            onToggle={() => setWaveEnabled((v) => !v)}
+            onClear={clearWaveData}
+          />
+        ),
+      },
     ],
-    [quickCommands, sendQuickCommand, currentHexData, clearHexData, hexEnabled]
+    [quickCommands, sendQuickCommand, currentHexData, clearHexData, hexEnabled, currentWaveData, clearWaveData, waveEnabled]
   );
 
   return (
