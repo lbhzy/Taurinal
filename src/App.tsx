@@ -375,7 +375,7 @@ function App() {
 
         {/* Title / drag area */}
         <div className="flex-1 text-xs text-muted-foreground/70 font-medium tracking-wide" data-tauri-drag-region>
-          Xterm App
+          Taurinal
         </div>
 
         {/* Layout toggle buttons */}

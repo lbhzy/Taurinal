@@ -1,4 +1,4 @@
-# Xterm App
+# Taurinal
 
 基于 Tauri v2 + React + xterm.js 构建的跨平台终端应用，支持本地 PTY、SSH 远程连接和串口通信。
 
