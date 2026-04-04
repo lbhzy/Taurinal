@@ -1,90 +1,170 @@
 # Taurinal
 
-基于 Tauri v2 + React + xterm.js 构建的跨平台终端应用，支持本地 PTY、SSH 远程连接和串口通信。
+Taurinal 是一个基于 Tauri 2 + React + xterm.js 的桌面终端工具，支持本地 Shell、SSH 和串口连接，并提供会话管理、触发器、快捷命令、Hex/Waveform 观测等能力。
 
 ## 功能特性
 
-- **本地终端** — 通过 `portable-pty` 创建本地伪终端，支持自定义启动命令
-- **SSH 连接** — 基于 `ssh2` 的远程 SSH 会话，支持密码和密钥认证
-- **串口通信** — 通过 `serialport` 连接串行设备，支持多种波特率
-- **多标签页** — 同时管理多个终端会话
-- **会话管理** — 侧边栏保存和快速连接常用会话
-- **触发器系统** — 基于正则匹配终端输出，支持高亮、悬浮提示、点击发送命令和自动发送命令
-- **快捷命令** — 可配置的一键发送命令栏
-- **Hex 查看器** — 底部面板实时显示终端数据的十六进制视图（虚拟滚动），支持录制开关
-- **数据波形** — 底部面板将终端输出按正则提取为数值并绘制实时波形，支持分组和点数控制
-- **终端配置** — 6 种内置配色主题、字体、光标样式等设置
-- **应用主题** — 支持深色/浅色应用主题切换
-- **配置持久化** — 所有配置通过 Tauri 文件系统存储，设置界面可直接打开配置目录
-- **VS Code 风格布局** — 可拖拽调整侧边栏/底部面板大小，自定义窗口标题栏
+- 多连接类型
+	- Local PTY（本地 Shell）
+	- SSH（密码 / 密钥认证）
+	- Serial（串口列表与波特率选择）
+- 多标签会话
+	- 每个会话独立 tab
+	- 状态点显示连接状态（连接中 / 已连接 / 断开）
+- 调试与观测
+	- Quick Commands 快捷命令栏
+	- Trigger 触发器（正则匹配高亮、提示、点击发送、自动发送）
+	- Hex View 原始数据查看
+	- Data Waveform 波形可视化
+- 终端体验
+	- 可配置字体、字号、光标样式、光标闪烁
+	- 内置多套终端主题 + App 主题
+	- 自动读取系统字体列表
+- 配置持久化
+	- 会话、快捷命令、触发器、布局、终端设置持久化到应用配置目录
+	- 支持一键打开配置目录
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 框架 | Tauri v2 |
-| 前端 | React 19 + TypeScript + Vite |
-| 终端 | @xterm/xterm 6 + @xterm/addon-fit |
-| UI | Tailwind CSS v4 + shadcn/ui + Lucide Icons |
-| 后端 | Rust (portable-pty, ssh2, serialport) |
+- 前端
+	- React 19
+	- TypeScript
+	- Vite 8
+	- Tailwind CSS 4
+	- shadcn/ui + Radix UI
+	- xterm.js
+- 后端
+	- Tauri 2
+	- Rust
+	- tokio
+	- russh（SSH）
+	- tokio-serial（串口）
+	- portable-pty（本地 PTY）
 
-## 项目结构
+## 目录结构
 
-```
-src/
-├── App.tsx                    # 主应用（标签页、布局、状态管理）
-├── components/
-│   ├── Terminal.tsx            # xterm.js 终端组件（PTY/SSH/Serial）
-│   ├── Sidebar.tsx             # 侧边栏（会话列表 + 活动栏）
-│   ├── BottomPanel.tsx         # 底部面板容器（可拖拽调整高度）
-│   ├── HexView.tsx             # 十六进制数据查看器
-│   ├── DataWaveform.tsx        # 数据波形可视化（正则提取数值）
-│   ├── ConnectDialog.tsx       # 新建连接对话框
-│   ├── SessionManager.tsx      # 保存会话管理
-│   ├── TriggerManager.tsx      # 触发器管理
-│   ├── SettingsDialog.tsx      # 终端设置对话框
-│   ├── QuickCommandBar.tsx     # 快捷命令栏
-│   ├── QuickCommandManager.tsx # 快捷命令编辑
-│   └── ui/                    # shadcn/ui 基础组件
-├── lib/
-│   ├── quick-commands.ts       # 快捷命令配置读写
-│   ├── saved-sessions.ts       # 会话配置读写
-│   ├── terminal-settings.ts    # 终端设置 + 内置主题
-│   ├── triggers.ts             # 触发器配置读写
-│   └── utils.ts
-└── styles.css                 # Tailwind + 全局样式
-
-src-tauri/src/
-├── lib.rs       # Tauri 应用入口，注册命令
-├── pty.rs       # 本地 PTY 创建与管理
-├── ssh.rs       # SSH 连接
-├── serial.rs    # 串口连接与端口枚举
-├── session.rs   # 统一会话管理（读写/调整/关闭）
-└── config.rs    # 配置文件读写 + 打开配置目录
+```text
+.
+├─ src/                    # React 前端
+│  ├─ components/          # UI 与业务组件
+│  └─ lib/                 # 配置与数据读写逻辑
+├─ src-tauri/              # Tauri + Rust 后端
+│  ├─ src/
+│  │  ├─ pty.rs            # 本地 PTY 会话
+│  │  ├─ ssh.rs            # SSH 会话
+│  │  ├─ serial.rs         # 串口会话
+│  │  ├─ session.rs        # 会话命令分发
+│  │  └─ config.rs         # 配置读写
+│  └─ tauri.conf.json      # Tauri 配置
+└─ package.json
 ```
 
-## 开发
+## 环境要求
 
-### 前置要求
+- Bun（建议最新稳定版）
+- Rust（stable）
+- Tauri 2 运行依赖
+	- macOS: Xcode Command Line Tools
+	- Linux / Windows: 参考 Tauri 官方依赖说明
 
-- [Bun](https://bun.sh) (包管理 & 前端构建)
-- [Rust](https://rustup.rs) (Tauri 后端)
-- macOS 需安装 OpenSSL: `brew install openssl@3`
-
-### 安装依赖
+## 快速开始
 
 ```bash
 bun install
+bun run tauri dev
 ```
 
-### 开发模式
+仅前端调试（不启动 Tauri 后端）:
 
 ```bash
-bun tauri dev
+bun run dev
 ```
 
-### 构建发布
+## 构建
+
+前端构建:
 
 ```bash
-bun tauri build
+bun run build
 ```
+
+桌面应用打包:
+
+```bash
+bun run tauri build
+```
+
+## 常用命令
+
+```bash
+# 开发模式（Vite）
+bun run dev
+
+# Tauri 开发模式
+bun run tauri dev
+
+# TypeScript 检查
+bunx tsc --noEmit
+
+# 前端构建
+bun run build
+```
+
+## 配置文件说明
+
+应用通过后端 `config_read/config_write` 将 JSON 存储到系统应用配置目录。
+
+常见配置键:
+
+- `terminal-settings`
+- `saved-sessions`
+- `quick-commands`
+- `triggers`
+- `layout`
+
+可在设置面板点击 `Open Config Folder` 快速打开目录。
+
+## 后端命令概览
+
+- 连接与会话
+	- `pty_spawn`
+	- `ssh_connect`
+	- `serial_list_ports`
+	- `serial_connect`
+	- `session_write`
+	- `session_resize`
+	- `session_close`
+- 配置与系统
+	- `config_read`
+	- `config_write`
+	- `config_open_folder`
+	- `system_list_fonts`
+
+## 连接说明
+
+- SSH
+	- 支持密码与私钥认证
+	- 连接阶段使用超时保护（默认 2 秒）
+- Serial
+	- 支持常见波特率
+	- 串口会话不支持 resize（收到 resize 指令时忽略）
+
+## 故障排查
+
+- 启动失败 / 白屏
+	- 先执行 `bun install`
+	- 再执行 `bunx tsc --noEmit` 检查类型错误
+- Tauri 无法启动
+	- 检查 Rust 工具链与系统依赖是否安装
+- SSH 连接失败
+	- 确认主机、端口、认证方式和密钥路径
+	- 网络不可达时会在短超时后返回错误
+- 字体列表异常
+	- 打开设置页重新加载
+	- 检查系统字体权限与缓存状态
+
+## 开发说明
+
+- 前端通过 Tauri `invoke` 调后端命令。
+- 后端通过 `session-output-{id}` 与 `session-exit-{id}` 事件向前端推送会话输出与退出状态。
+- 会话核心在 `SessionManager`，统一处理写入、resize、关闭命令分发。
