@@ -11,7 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { FolderOpen } from "lucide-react";
 import {
   type TerminalSettings,
@@ -52,6 +60,8 @@ function isLightTheme(theme: TerminalTheme): boolean {
 
 const darkThemes = Object.keys(BUILTIN_THEMES).filter((n) => !isLightTheme(BUILTIN_THEMES[n]));
 const lightThemes = Object.keys(BUILTIN_THEMES).filter((n) => isLightTheme(BUILTIN_THEMES[n]));
+const NONE_OPTION_VALUE = "__none__";
+const NO_FONTS_VALUE = "__no_fonts__";
 
 export function SettingsDialog({
   open,
@@ -61,6 +71,8 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const [settings, setSettings] = useState<TerminalSettings>(initial);
   const [allFonts, setAllFonts] = useState<string[]>([]);
+  const normalizedPrimaryFont = normalizeFontName(settings.fontFamily || "");
+  const normalizedFallbackFont = normalizeFontName(settings.fontFamilySecondary || "");
 
   useEffect(() => {
     if (open) {
@@ -107,18 +119,25 @@ export function SettingsDialog({
             <Label className="text-sm font-medium">App Theme</Label>
             <Select
               value={settings.appTheme}
-              onChange={(e) => update({ appTheme: e.target.value })}
+              onValueChange={(value) => update({ appTheme: value })}
             >
-              <optgroup label="Dark">
-                {APP_THEMES.filter((t) => t.dark).map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Light">
-                {APP_THEMES.filter((t) => !t.dark).map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </optgroup>
+              <SelectTrigger>
+                <SelectValue placeholder="Select app theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Dark</SelectLabel>
+                  {APP_THEMES.filter((t) => t.dark).map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Light</SelectLabel>
+                  {APP_THEMES.filter((t) => !t.dark).map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
             </Select>
           </div>
 
@@ -127,18 +146,25 @@ export function SettingsDialog({
             <Label className="text-sm font-medium">Terminal Color Theme</Label>
             <Select
               value={settings.themeName}
-              onChange={(e) => update({ themeName: e.target.value })}
+              onValueChange={(value) => update({ themeName: value })}
             >
-              <optgroup label="Dark">
-                {darkThemes.map((name) => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Light">
-                {lightThemes.map((name) => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </optgroup>
+              <SelectTrigger>
+                <SelectValue placeholder="Select terminal theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Dark</SelectLabel>
+                  {darkThemes.map((name) => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Light</SelectLabel>
+                  {lightThemes.map((name) => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
             </Select>
             {/* Theme preview */}
             <div
@@ -168,35 +194,48 @@ export function SettingsDialog({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Font Family</Label>
               <Select
-                value={normalizeFontName(settings.fontFamily)}
-                onChange={(e) => update({ fontFamily: normalizeFontName(e.target.value) })}
+                value={normalizedPrimaryFont || undefined}
+                onValueChange={(value) => update({ fontFamily: normalizeFontName(value) })}
               >
-                {allFonts.length === 0 && (
-                  <option value={normalizeFontName(settings.fontFamily)}>
-                    {normalizeFontName(settings.fontFamily) || "No fonts found"}
-                  </option>
-                )}
-                {allFonts.map((font) => (
-                  <option key={font} value={font}>
-                    {font}
-                  </option>
-                ))}
+                <SelectTrigger>
+                  <SelectValue placeholder="Select font family" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allFonts.length === 0 && (
+                    <SelectItem value={NO_FONTS_VALUE} disabled>
+                      {normalizedPrimaryFont || "No fonts found"}
+                    </SelectItem>
+                  )}
+                  {allFonts.map((font) => (
+                    <SelectItem key={font} value={font}>
+                      {font}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">Fallback Font</Label>
               <Select
-                value={normalizeFontName(settings.fontFamilySecondary || "")}
-                onChange={(e) =>
-                  update({ fontFamilySecondary: normalizeFontName(e.target.value) })
+                value={normalizedFallbackFont || NONE_OPTION_VALUE}
+                onValueChange={(value) =>
+                  update({
+                    fontFamilySecondary:
+                      value === NONE_OPTION_VALUE ? "" : normalizeFontName(value),
+                  })
                 }
               >
-                <option value="">None</option>
-                {allFonts.map((font) => (
-                  <option key={font} value={font}>
-                    {font}
-                  </option>
-                ))}
+                <SelectTrigger>
+                  <SelectValue placeholder="Select fallback font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_OPTION_VALUE}>None</SelectItem>
+                  {allFonts.map((font) => (
+                    <SelectItem key={font} value={font}>
+                      {font}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -222,27 +261,35 @@ export function SettingsDialog({
               <Label className="text-sm font-medium">Cursor Style</Label>
               <Select
                 value={settings.cursorStyle}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   update({
-                    cursorStyle: e.target.value as "block" | "underline" | "bar",
+                    cursorStyle: value as "block" | "underline" | "bar",
                   })
                 }
               >
-                <option value="block">Block</option>
-                <option value="underline">Underline</option>
-                <option value="bar">Bar</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cursor style" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="block">Block</SelectItem>
+                  <SelectItem value="underline">Underline</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">Cursor Blink</Label>
               <Select
                 value={settings.cursorBlink ? "on" : "off"}
-                onChange={(e) =>
-                  update({ cursorBlink: e.target.value === "on" })
-                }
+                onValueChange={(value) => update({ cursorBlink: value === "on" })}
               >
-                <option value="on">On</option>
-                <option value="off">Off</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cursor blink" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="on">On</SelectItem>
+                  <SelectItem value="off">Off</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>

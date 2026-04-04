@@ -9,9 +9,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Trash2, TerminalSquare, Globe, Usb, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SavedSession } from "@/lib/saved-sessions";
@@ -30,6 +38,7 @@ interface SessionManagerProps {
 }
 
 const COMMON_BAUD_RATES = [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600] as const;
+const NO_PORTS_VALUE = "__no_ports__";
 
 export function SessionManager({
   open,
@@ -227,10 +236,10 @@ export function SessionManager({
             </p>
           )}
           {sessions.map((s) => (
-            <div
+            <Card
               key={s.id}
               className={cn(
-                "flex items-center gap-2 rounded-md border px-3 py-2 group",
+                "flex items-center gap-2 rounded-md px-3 py-2 group shadow-none",
                 editingId === s.id
                   ? "border-primary/50 bg-primary/5"
                   : "border-border bg-muted/30"
@@ -259,12 +268,13 @@ export function SessionManager({
               >
                 <Trash2 className="size-3.5" />
               </Button>
-            </div>
+            </Card>
           ))}
         </div>
 
         {/* Add/edit session */}
-        <div className="border-t border-border pt-4 space-y-3">
+        <Separator />
+        <div className="pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">
               {editingId ? "Edit Session" : "Add New Session"}
@@ -291,14 +301,18 @@ export function SessionManager({
               <Label className="text-xs">Type</Label>
               <Select
                 value={connType}
-                onChange={(e) =>
-                  setConnType(e.target.value as "pty" | "ssh" | "serial")
+                onValueChange={(value) =>
+                  setConnType(value as "pty" | "ssh" | "serial")
                 }
-                className="h-8 text-xs"
               >
-                <option value="pty">Local Shell</option>
-                <option value="ssh">SSH</option>
-                <option value="serial">Serial</option>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pty">Local Shell</SelectItem>
+                  <SelectItem value="ssh">SSH</SelectItem>
+                  <SelectItem value="serial">Serial</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -351,13 +365,17 @@ export function SessionManager({
                   <Label className="text-xs">Auth</Label>
                   <Select
                     value={authMethod}
-                    onChange={(e) =>
-                      setAuthMethod(e.target.value as "password" | "key")
+                    onValueChange={(value) =>
+                      setAuthMethod(value as "password" | "key")
                     }
-                    className="h-8 text-xs"
                   >
-                    <option value="password">Password</option>
-                    <option value="key">Key File</option>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select auth" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="password">Password</SelectItem>
+                      <SelectItem value="key">Key File</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -391,18 +409,24 @@ export function SessionManager({
               <div className="space-y-1">
                 <Label className="text-xs">Port</Label>
                 <Select
-                  value={portName}
-                  onChange={(e) => setPortName(e.target.value)}
-                  className="h-8 text-xs"
+                  value={portName || undefined}
+                  onValueChange={setPortName}
                 >
-                  {serialPorts.length === 0 && (
-                    <option value="">No ports found</option>
-                  )}
-                  {serialPorts.map((p) => (
-                    <option key={p.port_name} value={p.port_name}>
-                      {p.port_name} ({p.port_type})
-                    </option>
-                  ))}
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select port" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serialPorts.length === 0 && (
+                      <SelectItem value={NO_PORTS_VALUE} disabled>
+                        No ports found
+                      </SelectItem>
+                    )}
+                    {serialPorts.map((p) => (
+                      <SelectItem key={p.port_name} value={p.port_name}>
+                        {p.port_name} ({p.port_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
@@ -419,18 +443,22 @@ export function SessionManager({
                   />
                   <Select
                     value={selectedCommonBaudRate}
-                    onChange={(e) => {
-                      if (e.target.value === "custom") return;
-                      onBaudRateInputChange(e.target.value);
+                    onValueChange={(value) => {
+                      if (value === "custom") return;
+                      onBaudRateInputChange(value);
                     }}
-                    className="h-8 text-xs w-[118px]"
                   >
-                    <option value="custom">Custom</option>
-                    {COMMON_BAUD_RATES.map((rate) => (
-                      <option key={rate} value={rate}>
-                        {rate}
-                      </option>
-                    ))}
+                    <SelectTrigger className="h-8 text-xs w-[118px]">
+                      <SelectValue placeholder="Baud" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">Custom</SelectItem>
+                      {COMMON_BAUD_RATES.map((rate) => (
+                        <SelectItem key={rate} value={String(rate)}>
+                          {rate}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>

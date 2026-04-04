@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Trash2, CircleDot, Circle } from "lucide-react";
 
 interface HexViewProps {
@@ -97,11 +98,13 @@ export function HexView({ data, enabled, onToggle, onClear }: HexViewProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             className={cn(
-              "flex items-center gap-1.5 h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium",
+              "h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium",
               enabled
-                ? "text-green-400/90 bg-green-500/10"
+                ? "text-green-400/90 bg-green-500/10 hover:bg-green-500/15"
                 : "text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-accent/40"
             )}
             onClick={onToggle}
@@ -109,18 +112,20 @@ export function HexView({ data, enabled, onToggle, onClear }: HexViewProps) {
           >
             {enabled ? <CircleDot className="size-3" /> : <Circle className="size-3" />}
             {enabled ? "Recording" : "Paused"}
-          </button>
+          </Button>
           <span className="text-[11px] text-muted-foreground/50 font-mono">
             {byteCount.toLocaleString()} bytes
           </span>
         </div>
-        <button
-          className="flex items-center justify-center h-5 w-5 rounded text-muted-foreground/50 hover:text-foreground/70 hover:bg-accent/40 transition-colors"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground/50 hover:text-foreground/70 hover:bg-accent/40"
           onClick={onClear}
           title="Clear hex view"
         >
           <Trash2 className="size-3" />
-        </button>
+        </Button>
       </div>
       <div
         ref={containerRef}

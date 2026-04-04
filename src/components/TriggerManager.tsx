@@ -8,9 +8,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Pencil, Check, X, Power, Regex } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, Pencil, Check, X, Regex } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Trigger, TriggerAction } from "@/lib/triggers";
 
@@ -164,31 +167,22 @@ export function TriggerManager({
             </p>
           )}
           {triggers.map((t) => (
-            <div
+            <Card
               key={t.id}
               className={cn(
-                "flex items-center gap-2 rounded-md border px-3 py-2 group",
+                "flex items-center gap-2 rounded-md px-3 py-2 group shadow-none",
                 editingId === t.id
                   ? "border-primary/50 bg-primary/5"
                   : "border-border bg-muted/30"
               )}
             >
               {/* Enable/disable switch */}
-              <button
-                className={cn(
-                  "relative w-7 h-4 rounded-full transition-colors shrink-0",
-                  t.enabled ? "bg-primary" : "bg-muted-foreground/30"
-                )}
-                onClick={() => toggleTrigger(t.id)}
+              <Switch
+                checked={t.enabled}
+                onCheckedChange={() => toggleTrigger(t.id)}
                 title={t.enabled ? "Disable trigger" : "Enable trigger"}
-              >
-                <div
-                  className={cn(
-                    "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
-                    t.enabled ? "translate-x-3.5" : "translate-x-0.5"
-                  )}
-                />
-              </button>
+                className="h-4 w-7 data-[state=unchecked]:bg-muted-foreground/30"
+              />
 
               {/* Color dot */}
               {t.actions.highlight && (
@@ -223,12 +217,13 @@ export function TriggerManager({
               >
                 <Trash2 className="size-3.5" />
               </Button>
-            </div>
+            </Card>
           ))}
         </div>
 
         {/* Add/edit form */}
-        <div className="border-t border-border pt-4 space-y-3">
+        <Separator />
+        <div className="pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">
               {editingId ? "Edit Trigger" : "Add New Trigger"}
@@ -280,10 +275,12 @@ export function TriggerManager({
             <Label className="text-xs">Highlight Color</Label>
             <div className="flex items-center gap-1.5">
               {COLORS.map((c) => (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   key={c}
                   className={cn(
-                    "w-5 h-5 rounded-full transition-all border-2",
+                    "w-5 h-5 rounded-full transition-all border-2 p-0 min-w-0",
                     highlight === c ? "border-foreground scale-110" : "border-transparent"
                   )}
                   style={{ backgroundColor: c }}

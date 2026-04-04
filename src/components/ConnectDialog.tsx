@@ -12,8 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TerminalSquare, Globe, Usb } from "lucide-react";
 
 interface SerialPortInfo {
@@ -26,6 +32,8 @@ interface ConnectDialogProps {
   onConnect: (config: ConnectionConfig) => void;
   onCancel: () => void;
 }
+
+const NO_PORTS_VALUE = "__no_ports__";
 
 export function ConnectDialog({ open, onConnect, onCancel }: ConnectDialogProps) {
   const [tab, setTab] = useState<"pty" | "ssh" | "serial">("pty");
@@ -91,32 +99,25 @@ export function ConnectDialog({ open, onConnect, onCancel }: ConnectDialogProps)
         </DialogHeader>
 
         {/* Connection Type Tabs */}
-        <TabsList className="w-full">
-          <TabsTrigger
-            active={tab === "pty"}
-            onClick={() => setTab("pty")}
-            className="flex-1 gap-1.5"
-          >
-            <TerminalSquare className="size-3.5" />
-            Local Shell
-          </TabsTrigger>
-          <TabsTrigger
-            active={tab === "ssh"}
-            onClick={() => setTab("ssh")}
-            className="flex-1 gap-1.5"
-          >
-            <Globe className="size-3.5" />
-            SSH
-          </TabsTrigger>
-          <TabsTrigger
-            active={tab === "serial"}
-            onClick={() => setTab("serial")}
-            className="flex-1 gap-1.5"
-          >
-            <Usb className="size-3.5" />
-            Serial
-          </TabsTrigger>
-        </TabsList>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as "pty" | "ssh" | "serial")}
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="pty" className="flex-1 gap-1.5">
+              <TerminalSquare className="size-3.5" />
+              Local Shell
+            </TabsTrigger>
+            <TabsTrigger value="ssh" className="flex-1 gap-1.5">
+              <Globe className="size-3.5" />
+              SSH
+            </TabsTrigger>
+            <TabsTrigger value="serial" className="flex-1 gap-1.5">
+              <Usb className="size-3.5" />
+              Serial
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           {tab === "pty" && (
@@ -179,14 +180,18 @@ export function ConnectDialog({ open, onConnect, onCancel }: ConnectDialogProps)
               <div className="space-y-2">
                 <Label htmlFor="ssh-auth">Auth Method</Label>
                 <Select
-                  id="ssh-auth"
                   value={authMethod}
-                  onChange={(e) =>
-                    setAuthMethod(e.target.value as "password" | "key")
+                  onValueChange={(value) =>
+                    setAuthMethod(value as "password" | "key")
                   }
                 >
-                  <option value="password">Password</option>
-                  <option value="key">Key File</option>
+                  <SelectTrigger id="ssh-auth">
+                    <SelectValue placeholder="Select auth method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="password">Password</SelectItem>
+                    <SelectItem value="key">Key File</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -222,35 +227,45 @@ export function ConnectDialog({ open, onConnect, onCancel }: ConnectDialogProps)
               <div className="space-y-2">
                 <Label htmlFor="serial-port">Port</Label>
                 <Select
-                  id="serial-port"
-                  value={portName}
-                  onChange={(e) => setPortName(e.target.value)}
+                  value={portName || undefined}
+                  onValueChange={setPortName}
                   required
                 >
-                  {serialPorts.length === 0 && (
-                    <option value="">No ports found</option>
-                  )}
-                  {serialPorts.map((p) => (
-                    <option key={p.port_name} value={p.port_name}>
-                      {p.port_name} ({p.port_type})
-                    </option>
-                  ))}
+                  <SelectTrigger id="serial-port">
+                    <SelectValue placeholder="Select serial port" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serialPorts.length === 0 && (
+                      <SelectItem value={NO_PORTS_VALUE} disabled>
+                        No ports found
+                      </SelectItem>
+                    )}
+                    {serialPorts.map((p) => (
+                      <SelectItem key={p.port_name} value={p.port_name}>
+                        {p.port_name} ({p.port_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="serial-baud">Baud Rate</Label>
                 <Select
-                  id="serial-baud"
-                  value={baudRate}
-                  onChange={(e) => setBaudRate(Number(e.target.value))}
+                  value={String(baudRate)}
+                  onValueChange={(value) => setBaudRate(Number(value))}
                 >
-                  {[
-                    9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600,
-                  ].map((rate) => (
-                    <option key={rate} value={rate}>
-                      {rate}
-                    </option>
-                  ))}
+                  <SelectTrigger id="serial-baud">
+                    <SelectValue placeholder="Select baud rate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600,
+                    ].map((rate) => (
+                      <SelectItem key={rate} value={String(rate)}>
+                        {rate}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </>

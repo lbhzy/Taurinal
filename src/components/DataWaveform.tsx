@@ -136,18 +136,20 @@ export function DataWaveform({ data, enabled, onToggle, onClear }: DataWaveformP
     <div className="flex flex-col h-full min-h-0">
       <div className="px-3 py-2 border-b border-border/40 space-y-2 shrink-0">
         <div className="flex items-center justify-between">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             className={
               enabled
-                ? "flex items-center gap-1.5 h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium text-green-400/90 bg-green-500/10"
-                : "flex items-center gap-1.5 h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-accent/40"
+                ? "h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium text-green-400/90 bg-green-500/10 hover:bg-green-500/15"
+                : "h-5 px-2 text-[11px] rounded-md transition-all duration-150 font-medium text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-accent/40"
             }
             onClick={onToggle}
             title={enabled ? "Stop waveform capture" : "Start waveform capture"}
           >
             {enabled ? <CircleDot className="size-3" /> : <Circle className="size-3" />}
             {enabled ? "Recording" : "Paused"}
-          </button>
+          </Button>
           <div className="text-[11px] text-muted-foreground/70">
             Regex-matched numeric waveform
           </div>

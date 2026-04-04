@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Bookmark,
   TerminalSquare,
@@ -119,7 +120,9 @@ export function Sidebar({
       {/* Activity Bar — always visible */}
       <div className="flex flex-col items-center w-12 bg-card/60 border-r border-border/50 py-2 shrink-0 justify-between">
         <div className="flex flex-col items-center gap-1">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
               "flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 relative",
               activePanel === "sessions"
@@ -133,8 +136,10 @@ export function Sidebar({
             {activePanel === "sessions" && (
               <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-primary rounded-r" />
             )}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className={cn(
               "flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 relative",
               activePanel === "triggers"
@@ -148,16 +153,18 @@ export function Sidebar({
             {activePanel === "triggers" && (
               <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-primary rounded-r" />
             )}
-          </button>
+          </Button>
         </div>
         <div className="flex flex-col items-center gap-1">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             className="flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 text-muted-foreground/60 hover:text-foreground/80"
             onClick={onSettings}
             title="Settings"
           >
             <Settings className="size-[18px]" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -173,13 +180,15 @@ export function Sidebar({
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                   Sessions
                 </span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground/50 hover:text-foreground/80 hover:bg-accent/40 transition-colors"
                   onClick={onManageSessions}
                   title="Manage sessions"
                 >
                   <Settings className="size-3.5" />
-                </button>
+                </Button>
               </div>
 
               {/* Session list */}
@@ -193,9 +202,10 @@ export function Sidebar({
                 ) : (
                   <div className="py-0.5">
                     {sessions.map((session) => (
-                      <button
+                      <Button
+                        variant="ghost"
                         key={session.id}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-accent/40 transition-all duration-100 group"
+                        className="w-full h-auto justify-start items-center gap-2.5 px-3 py-2 text-left hover:bg-accent/40 transition-all duration-100 group"
                         onClick={() => onOpenSession(session.config)}
                         title={`Connect: ${session.name}`}
                       >
@@ -209,7 +219,7 @@ export function Sidebar({
                           </div>
                         </div>
                         <Play className="size-3 text-primary/0 group-hover:text-primary/60 shrink-0 transition-all duration-150" />
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -224,13 +234,15 @@ export function Sidebar({
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                   Triggers
                 </span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground/50 hover:text-foreground/80 hover:bg-accent/40 transition-colors"
                   onClick={onManageTriggers}
                   title="Manage triggers"
                 >
                   <Settings className="size-3.5" />
-                </button>
+                </Button>
               </div>
 
               {/* Trigger list */}
@@ -249,21 +261,12 @@ export function Sidebar({
                         className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-accent/40 transition-all duration-100 group"
                       >
                         {/* Switch */}
-                        <button
-                          className={cn(
-                            "relative w-7 h-4 rounded-full transition-colors shrink-0",
-                            trigger.enabled ? "bg-primary" : "bg-muted-foreground/30"
-                          )}
-                          onClick={() => onToggleTrigger(trigger.id)}
+                        <Switch
+                          checked={trigger.enabled}
+                          onCheckedChange={() => onToggleTrigger(trigger.id)}
                           title={trigger.enabled ? "Disable" : "Enable"}
-                        >
-                          <div
-                            className={cn(
-                              "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
-                              trigger.enabled ? "translate-x-3.5" : "translate-x-0.5"
-                            )}
-                          />
-                        </button>
+                          className="h-4 w-7 data-[state=unchecked]:bg-muted-foreground/30"
+                        />
 
                         {/* Color dot */}
                         {trigger.actions.highlight && (

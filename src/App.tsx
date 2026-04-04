@@ -15,6 +15,8 @@ import { loadTerminalSettings, saveTerminalSettings, type TerminalSettings } fro
 import { loadTriggers, saveTriggers, type Trigger } from "@/lib/triggers";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TriggerManager } from "@/components/TriggerManager";
 import {
   Plus, X, TerminalSquare, Globe, Usb, Zap, Binary, Activity,
@@ -372,28 +374,24 @@ function App() {
 
         {/* Layout toggle buttons */}
         <div className="flex items-center gap-0.5 px-2 shrink-0 titlebar-buttons">
-          <button
-            className={cn(
-              "flex items-center justify-center h-6 w-6 rounded transition-colors duration-100",
-              "hover:bg-secondary/80",
-              "text-foreground/90"
-            )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-foreground/90 hover:bg-secondary/80"
             onClick={() => setShowSidebar((v) => !v)}
             title={showSidebar ? "Hide sidebar" : "Show sidebar"}
           >
             {showSidebar ? <SidebarLeftIcon /> : <SidebarLeftOffIcon />}
-          </button>
-          <button
-            className={cn(
-              "flex items-center justify-center h-6 w-6 rounded transition-colors duration-100",
-              "hover:bg-secondary/80",
-              "text-foreground/90"
-            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-foreground/90 hover:bg-secondary/80"
             onClick={() => setShowBottomPanel((v) => !v)}
             title={showBottomPanel ? "Hide bottom panel" : "Show bottom panel"}
           >
             {showBottomPanel ? <PanelBottomIcon /> : <PanelBottomOffIcon />}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -418,34 +416,54 @@ function App() {
         <div className="flex flex-col flex-1 min-w-0">
           {/* Tab Bar - only shown when tabs exist */}
           {tabs.length > 0 && (
-            <div className="flex items-center bg-card/50 border-b border-border/50 h-9 shrink-0 overflow-x-auto scrollbar-thin">
-              {tabs.map((tab) => (
-                <div
-                  key={tab.id}
-                  className={cn(
-                    "group flex items-center gap-2 px-3 h-full cursor-pointer border-r border-border/30 text-xs select-none transition-all duration-150",
-                    activeTab === tab.id
-                      ? "bg-background text-foreground"
-                      : "text-muted-foreground hover:bg-accent/30 hover:text-foreground/80"
-                  )}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <span className={cn("transition-colors", activeTab === tab.id ? "text-primary" : "")}>
-                    {getTabIcon(tab.config.type)}
-                  </span>
-                  <span className="max-w-[140px] truncate">{tab.label}</span>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 hover:bg-muted/80 rounded p-0.5 transition-all duration-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeTab(tab.id);
-                    }}
+            <Tabs
+              value={String(activeTab)}
+              onValueChange={(value) => setActiveTab(Number(value))}
+              className="bg-card/50 border-b border-border/50 h-9 shrink-0"
+            >
+              <TabsList className="h-full w-full justify-start rounded-none bg-transparent p-0 overflow-x-auto scrollbar-thin">
+                {tabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={String(tab.id)}
+                    className={cn(
+                      "group rounded-none border-r border-border/30 px-3 h-full text-xs gap-2",
+                      "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none",
+                      "text-muted-foreground hover:bg-accent/30 hover:text-foreground/80"
+                    )}
                   >
-                    <X className="size-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <span className={cn("transition-colors", activeTab === tab.id ? "text-primary" : "")}> 
+                      {getTabIcon(tab.config.type)}
+                    </span>
+                    <span className="max-w-[140px] truncate">{tab.label}</span>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 opacity-0 group-hover:opacity-100 hover:bg-muted/80 rounded p-0.5 transition-all duration-100"
+                    >
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            closeTab(tab.id);
+                          }
+                        }}
+                      >
+                        <X className="size-3" />
+                      </span>
+                    </Button>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           )}
 
           {/* Terminal Area */}
@@ -460,28 +478,33 @@ function App() {
                     </div>
                     <div className="grid grid-cols-2 gap-3 w-full max-w-md">
                       {savedSessions.map((session) => (
-                        <button
+                        <Card
                           key={session.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-accent/40 hover:border-primary/30 transition-all duration-150 text-left group"
-                          onClick={() => addTab(session.config)}
-                          title={`Connect: ${session.name}`}
+                          className="rounded-lg border-border/60 bg-card/60 hover:bg-accent/40 hover:border-primary/30 transition-all duration-150 text-left group shadow-none"
                         >
-                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/40 text-muted-foreground/60 group-hover:text-primary/80 transition-colors shrink-0">
-                            {getTabIcon(session.config.type)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate text-foreground/85 group-hover:text-foreground transition-colors">
-                              {session.name}
+                          <Button
+                            variant="ghost"
+                            className="w-full h-auto justify-start items-center gap-3 p-3 text-left"
+                            onClick={() => addTab(session.config)}
+                            title={`Connect: ${session.name}`}
+                          >
+                            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/40 text-muted-foreground/60 group-hover:text-primary/80 transition-colors shrink-0">
+                              {getTabIcon(session.config.type)}
                             </div>
-                            <div className="text-[11px] text-muted-foreground/50 truncate font-mono">
-                              {session.config.type === "pty"
-                                ? session.config.command || "Local Shell"
-                                : session.config.type === "ssh"
-                                ? `${session.config.username}@${session.config.host}:${session.config.port}`
-                                : `${session.config.portName} @ ${session.config.baudRate}`}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate text-foreground/85 group-hover:text-foreground transition-colors">
+                                {session.name}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground/50 truncate font-mono">
+                                {session.config.type === "pty"
+                                  ? session.config.command || "Local Shell"
+                                  : session.config.type === "ssh"
+                                  ? `${session.config.username}@${session.config.host}:${session.config.port}`
+                                  : `${session.config.portName} @ ${session.config.baudRate}`}
+                              </div>
                             </div>
-                          </div>
-                        </button>
+                          </Button>
+                        </Card>
                       ))}
                     </div>
                   </>

@@ -8,8 +8,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, GripVertical, Pencil, Check, X } from "lucide-react";
 import type { QuickCommand } from "@/lib/quick-commands";
 
@@ -112,9 +114,9 @@ export function QuickCommandManager({
             </p>
           )}
           {commands.map((cmd) => (
-            <div
+            <Card
               key={cmd.id}
-              className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 group"
+              className="flex items-center gap-2 rounded-md border-border bg-muted/30 px-3 py-2 group shadow-none"
             >
               {editingId === cmd.id ? (
                 <>
@@ -177,12 +179,13 @@ export function QuickCommandManager({
                   </Button>
                 </>
               )}
-            </div>
+            </Card>
           ))}
         </div>
 
         {/* Add new command */}
-        <div className="border-t border-border pt-4 space-y-3">
+        <Separator />
+        <div className="pt-4 space-y-3">
           <div className="grid grid-cols-5 gap-2">
             <div className="col-span-2 space-y-1">
               <Label htmlFor="cmd-label" className="text-xs">

@@ -1,6 +1,7 @@
-import { useRef, useCallback, type ReactNode } from "react";
+import { useRef, useCallback, useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export interface PanelTab {
   id: string;
@@ -28,6 +29,16 @@ export function BottomPanel({
   const draggingRef = useRef(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
+
+  useEffect(() => {
+    if (tabs.length === 0) {
+      setActiveTab("");
+      return;
+    }
+    if (!tabs.some((tab) => tab.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -69,41 +80,40 @@ export function BottomPanel({
         onMouseDown={handleMouseDown}
       />
 
-      {/* Tab bar */}
-      <div className="flex items-center border-b border-border/40 shrink-0 h-8 select-none">
-        <div className="flex items-center flex-1 overflow-x-auto">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex flex-col min-h-0 flex-1"
+      >
+        {/* Tab bar */}
+        <div className="flex items-center border-b border-border/40 shrink-0 h-8 select-none">
+          <TabsList className="h-full bg-transparent rounded-none p-0 w-full justify-start overflow-x-auto">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 h-full text-[11px] rounded-none border-b-2 border-transparent",
+                  "data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground/90",
+                  "text-muted-foreground/60 hover:text-foreground/70"
+                )}
+              >
+                {tab.icon}
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        {/* Panel content */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={cn(
-                "flex items-center gap-1.5 px-3 h-full text-[11px] transition-all duration-150 border-b-2",
-                activeTab === tab.id
-                  ? "text-foreground/90 border-primary"
-                  : "text-muted-foreground/60 border-transparent hover:text-foreground/70"
-              )}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon}
-              <span className="whitespace-nowrap">{tab.label}</span>
-            </button>
+            <TabsContent key={tab.id} value={tab.id} className="h-full mt-0">
+              {tab.content}
+            </TabsContent>
           ))}
         </div>
-      </div>
-
-      {/* Panel content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-          {tabs.map((tab) => (
-            <div
-              key={tab.id}
-              className={cn(
-                "h-full",
-                activeTab === tab.id ? "block" : "hidden"
-              )}
-            >
-              {tab.content}
-            </div>
-          ))}
-      </div>
+      </Tabs>
     </div>
   );
 }

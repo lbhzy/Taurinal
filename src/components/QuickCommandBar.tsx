@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings } from "lucide-react";
 import type { QuickCommand } from "@/lib/quick-commands";
 
@@ -19,15 +20,18 @@ export function QuickCommandBar({
         <span className="text-[11px] text-muted-foreground/60">
           {commands.length} commands
         </span>
-        <button
-          className="flex items-center justify-center h-5 w-5 rounded text-muted-foreground/50 hover:text-foreground/70 hover:bg-accent/40 transition-colors"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground/50 hover:text-foreground/70 hover:bg-accent/40"
           onClick={onManage}
           title="Manage quick commands"
         >
           <Settings className="size-3" />
-        </button>
+        </Button>
       </div>
-      <div className="flex-1 overflow-auto p-2 scrollbar-thin">
+      <ScrollArea className="flex-1">
+        <div className="p-2">
         {commands.length === 0 ? (
           <span className="text-xs text-muted-foreground/50">
             No quick commands. Click the gear icon to add some.
@@ -35,18 +39,21 @@ export function QuickCommandBar({
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {commands.map((cmd) => (
-              <button
+              <Button
                 key={cmd.id}
-                className="h-6 px-2.5 text-[11px] rounded-md bg-secondary/60 text-secondary-foreground/80 hover:bg-secondary hover:text-secondary-foreground transition-all duration-100 font-medium"
+                variant="secondary"
+                size="sm"
+                className="h-6 px-2.5 text-[11px] bg-secondary/60 text-secondary-foreground/80 hover:bg-secondary hover:text-secondary-foreground font-medium"
                 onClick={() => onSend(cmd.command)}
                 title={cmd.command.replace(/\n$/, "")}
               >
                 {cmd.label}
-              </button>
+              </Button>
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }
